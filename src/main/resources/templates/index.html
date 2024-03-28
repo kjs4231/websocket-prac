@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat App</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+</head>
+<body>
+<div>
+  <input type="text" id="name" placeholder="Your name">
+  <input type="text" id="message" placeholder="Your message">
+  <button onclick="sendMessage()">Send</button>
+</div>
+<script>
+  var stompClient = null;
+  function connect() {
+    var socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function(frame) {
+      console.log('Connected: ' + frame);
+      stompClient.subscribe('/topic/public', function(message) {
+        var messageObj = JSON.parse(message.body);
+        console.log(messageObj.sender + ": " + messageObj.content);
+      });
+    });
+  }
+  function sendMessage() {
+    var senderName = document.getElementById('name').value;
+    var messageContent = document.getElementById('message').value;
+    if(messageContent && senderName) {
+      stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({'content': messageContent, 'sender': senderName}));
+      document.getElementById('message').value = ''; // Clear the message input after sending
+    }
+  }
+  connect();
+</script>
+</body>
+</html>
