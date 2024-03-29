@@ -1,33 +1,60 @@
 package com.last.websocketprac.controller;
 
 import com.last.websocketprac.dto.ChatMessage;
+import com.last.websocketprac.service.GameRoomService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 
 @Controller
 @Slf4j
 public class ChatController {
 
-    @MessageMapping("/chat.sendMessage") // 이게 핸들러 역할.
-    // 클라이언트가 /chat.sendMessage를 통해 메시지를 보내면 이 메소드가 처리하고 처리된 결과가 /topic/public으로 구독된 클라이언트에게 전송.
-    @SendTo("/topic/public")
-    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) { //@Payload 객체로 메세지를 받아들임.
-        // 서비스 처리한게 없으니 그대로 반환. 나중에 할때 서비스에 넣을게 뭐가 있을까? 검열? 그건 프론트에서 하는건가? 접속자 확인?
-        // 더 알아보니 검열은 컨트롤러에서 가능!!
-        return chatMessage;
+    private SimpMessageSendingOperations messagingTemplate;
+    private GameRoomService gameRoomService;
+    public ChatController(SimpMessageSendingOperations messagingTemplate, GameRoomService gameRoomService) {
+        this.messagingTemplate = messagingTemplate;
+        this.gameRoomService = gameRoomService;
     }
 
-    @MessageMapping("/chat.addUser") // 이 엔드포인트로 클라이언트가 JSON.stringify({sender: username, type: 'JOIN'}) 보냄.
-    @SendTo("/topic/public")
-    public ChatMessage addUser(@Payload ChatMessage chatMessage,
-                               //SimpMessageHeaderAccessor로 메세지 헤더에 접근해서 웹소켓세션에 참여자의 정보를 저장? 사용?
-                               SimpMessageHeaderAccessor headerAccessor) {
 
-        headerAccessor.getSessionAttributes().put("username", chatMessage.getSender()); //유저네임을 세션에 저장.
-        return chatMessage;
+    @MessageMapping("/chat.sendMessage/{roomId}")
+    public void sendMessage(@DestinationVariable Long roomId, @Payload ChatMessage chatMessage) {
+
+        if (!gameRoomService.existsById(roomId)) {
+            // 여기서 오류 처리 로직을 구현합니다. 예를 들어, 오류 로깅을 하거나 클라이언트에 오류 메시지를 전송합니다.
+            return; // 방이 존재하지 않으면 메서드를 종료합니다.
+        }
+
+        String filteredContent = gameRoomService.filterMessage(chatMessage.getContent());
+        chatMessage.setContent(filteredContent);
+
+        // 동적으로 메시지를 라우팅할 주소를 생성, 이부분 좀더 공부하고 이해가 필요...
+        String destination = "/topic/gameRoom/" + roomId;
+
+        messagingTemplate.convertAndSend(destination, chatMessage);
+    }
+
+
+    @MessageMapping("/chat.addUser/{roomId}")
+    public void addUser(@DestinationVariable Long roomId, @Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
+
+        //이거 방이 없어도 없는 게임방번호 입력하면 채팅이 열리는 문제가 발생해서 검증로직 추가한거.
+        if (!gameRoomService.existsById(roomId)) {
+            return;
+        }
+
+        headerAccessor.getSessionAttributes().put("room_id", roomId); //에러난 이유 : 헤더에 방번호를 추가안해줘서 나갔을때 어느방에서 나갔는지 모르기에 퇴장 메세지 안떴음.
+        headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
+        String destination = "/topic/gameRoom/" + roomId;
+
+        // 입장 메시지 전송.
+        messagingTemplate.convertAndSend(destination, chatMessage);
     }
 }

@@ -22,6 +22,9 @@ public class GameRoom {
     @Column(name = "room_name")
     private String roomName;
 
+    @OneToOne(mappedBy = "gameRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Chatting chatting;
+
 
 
 }

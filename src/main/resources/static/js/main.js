@@ -10,6 +10,7 @@ var connectingElement = document.querySelector('.connecting');
 
 var stompClient = null;
 var username = null;
+var roomNumber = null; // 방 번호를 전역 변수로 추가
 
 var colors = [
     '#2196F3', '#32c787', '#00BCD4', '#ff5652',
@@ -18,66 +19,64 @@ var colors = [
 
 function connect(event) {
     username = document.querySelector('#name').value.trim();
+    roomNumber = document.querySelector('#roomNumber').value.trim(); // 방 번호를 가져옵니다.
 
-    if(username) {
+    if(username && roomNumber) {
         usernamePage.classList.add('hidden');
         chatPage.classList.remove('hidden');
 
         var socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, onConnected, onError);
+        stompClient.connect({}, function onConnected() {
+            // 구독 경로를 방 번호에 따라 동적으로 설정합니다.
+            stompClient.subscribe('/topic/gameRoom/' + roomNumber, onMessageReceived);
+
+            // 사용자 추가 메시지를 해당 방에 전송합니다.
+            stompClient.send("/app/chat.addUser/" + roomNumber,
+                {},
+                JSON.stringify({sender: username, type: 'JOIN'})
+            )
+
+            connectingElement.classList.add('hidden');
+        }, onError);
     }
     event.preventDefault();
 }
 
-
 function onConnected() {
-    // Subscribe to the Public Topic
-    stompClient.subscribe('/topic/public', onMessageReceived);
-
-    // Tell your username to the server
-    stompClient.send("/app/chat.addUser",
-        {},
-        JSON.stringify({sender: username, type: 'JOIN'})
-    )
-
-    connectingElement.classList.add('hidden');
+    // 이 함수는 더 이상 필요하지 않습니다.
 }
-
 
 function onError(error) {
     connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
     connectingElement.style.color = 'red';
 }
 
-
 function sendMessage(event) {
     var messageContent = messageInput.value.trim();
-    if(messageContent && stompClient) {
-        var chatMessage = {
-            sender: username,
-            content: messageInput.value,
-            type: 'CHAT'
-        };
-        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+    if(messageContent && stompClient) {        var chatMessage = {
+        sender: username,
+        content: messageInput.value,
+        type: 'CHAT'
+    };
+        // 방 번호를 사용하여 메시지를 올바른 주소로 전송합니다.
+        stompClient.send("/app/chat.sendMessage/" + roomNumber, {}, JSON.stringify(chatMessage));
         messageInput.value = '';
     }
     event.preventDefault();
 }
 
-
 function onMessageReceived(payload) {
     var message = JSON.parse(payload.body);
-
     var messageElement = document.createElement('li');
 
     if(message.type === 'JOIN') {
         messageElement.classList.add('event-message');
-        message.content = message.sender + '님이 참여하였습니다!';
+        message.content = message.sender + '님이 입장하셨습니다.';
     } else if (message.type === 'LEAVE') {
         messageElement.classList.add('event-message');
-        message.content = message.sender + '님이 떠났습니다!!';
+        message.content = message.sender + '님이 퇴장하셨습니다.';
     } else {
         messageElement.classList.add('chat-message');
 
@@ -104,7 +103,6 @@ function onMessageReceived(payload) {
     messageArea.scrollTop = messageArea.scrollHeight;
 }
 
-
 function getAvatarColor(messageSender) {
     var hash = 0;
     for (var i = 0; i < messageSender.length; i++) {
@@ -114,5 +112,6 @@ function getAvatarColor(messageSender) {
     return colors[index];
 }
 
-usernameForm.addEventListener('submit', connect, true)
-messageForm.addEventListener('submit', sendMessage, true)
+usernameForm.addEventListener('submit', connect, true);
+messageForm.addEventListener('submit', sendMessage, true);
+
