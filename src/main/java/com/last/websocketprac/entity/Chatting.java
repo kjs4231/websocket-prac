@@ -12,7 +12,7 @@ public class Chatting {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "room_id")
+    @Column(name = "chat_id")
     private Long chatId;
 
     @OneToOne

@@ -10,7 +10,7 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
-@Table(name = "GameRoom")
+@Table(name = "Game_room")
 public class GameRoom {
 
     @Id
@@ -21,8 +21,7 @@ public class GameRoom {
     private Date createAt;
     @Column(name = "room_name")
     private String roomName;
-    @Column(name = "playing")
-    private String playing;
+
 
 
 }
