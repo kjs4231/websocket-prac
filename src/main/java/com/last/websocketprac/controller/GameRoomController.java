@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/gameRoom")
 public class GameRoomController {
 
-    @Autowired
     private GameRoomService gameRoomService;
+    public GameRoomController(GameRoomService gameRoomService) {
+        this.gameRoomService = gameRoomService;
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<GameRoom> createGameRoom(@RequestBody GameRoomDto gameRoomDto) {

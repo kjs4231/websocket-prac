@@ -1,15 +1,12 @@
 package com.last.websocketprac.entity;
 
-import com.last.websocketprac.entity.Chatting;
 import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Date;
 
 @Entity
 @Getter
-@Setter
 @Table(name = "Game_room")
 public class GameRoom {
 
@@ -24,6 +21,22 @@ public class GameRoom {
 
     @OneToOne(mappedBy = "gameRoom", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Chatting chatting;
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
+    }
+
+    public void setCreateAt(Date createAt) {
+        this.createAt = createAt;
+    }
+
+    public void setRoomName(String roomName) {
+        this.roomName = roomName;
+    }
+
+    public void setChatting(Chatting chatting) {
+        this.chatting = chatting;
+    }
 
 
 

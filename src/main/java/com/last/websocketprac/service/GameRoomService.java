@@ -4,7 +4,6 @@ import com.last.websocketprac.dto.GameRoomDto;
 import com.last.websocketprac.entity.Chatting;
 import com.last.websocketprac.entity.GameRoom;
 import com.last.websocketprac.repository.GameRoomRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -12,8 +11,11 @@ import java.util.Date;
 @Service
 public class GameRoomService {
 
-    @Autowired
     private GameRoomRepository gameRoomRepository;
+    public GameRoomService(GameRoomRepository gameRoomRepository) {
+        this.gameRoomRepository = gameRoomRepository;
+    }
+
 
     public GameRoom createGameRoom(GameRoomDto gameRoomDto) {
         GameRoom gameRoom = new GameRoom();
