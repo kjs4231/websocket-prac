@@ -24,7 +24,7 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event) {
-        logger.info("Received a new web socket connection");
+        logger.info("새로운 웹소켓 연결!!");
     }
 
     @EventListener
@@ -35,7 +35,7 @@ public class WebSocketEventListener {
         String username = (String) headerAccessor.getSessionAttributes().get("username");
 
         if(username != null && roomId != null) {
-            logger.info("User Disconnected : " + username + " from room " + roomId);
+            logger.info("연결해제 : 유저네임 - " + username + ", 방번호 - " + roomId);
 
             ChatMessage chatMessage = new ChatMessage();
             chatMessage.setType(ChatMessage.MessageType.LEAVE);

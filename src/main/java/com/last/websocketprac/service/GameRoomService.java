@@ -37,6 +37,7 @@ public class GameRoomService {
     public boolean existsById(Long roomId) {
         return gameRoomRepository.existsById(roomId);
     }
+
     public String filterMessage(String message) {
         // 욕설 필터링
         return message.replaceAll("(씨발|병신|ㅅㅂ)", "**");
